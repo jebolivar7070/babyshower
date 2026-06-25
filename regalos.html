@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Regalos · Baby Shower Martín</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    html,body{min-height:100%;background:#F5EFE4;font-family:'Lato',sans-serif;color:#3A2A10}
+
+    /* TOP BAR */
+    .top-bar{
+      background:#F5EFE4;border-bottom:1px solid #C9B08A;
+      padding:.75rem 1.2rem;display:flex;align-items:center;
+      justify-content:space-between;position:sticky;top:0;z-index:100;
+    }
+    .top-bar a{font-size:.72rem;color:#7B5B1A;letter-spacing:.12em;
+               text-transform:uppercase;text-decoration:none;}
+    .top-bar a:hover{text-decoration:underline}
+    .top-label{font-size:.62rem;color:#C9B08A;letter-spacing:.1em;text-transform:uppercase}
+
+    /* HEADER */
+    .page-title{
+      font-family:'Dancing Script',cursive;
+      font-size:clamp(2rem,7vw,3rem);color:#7B5B1A;
+      text-align:center;padding:1.2rem 1rem .25rem;line-height:1;
+    }
+    .page-sub{
+      text-align:center;font-size:.7rem;letter-spacing:.18em;
+      color:#A07840;text-transform:uppercase;margin-bottom:1rem;
+    }
+
+    /* FILTROS */
+    .filters{
+      display:flex;flex-wrap:wrap;gap:.45rem;
+      justify-content:center;padding:.4rem 1rem .9rem;
+    }
+    .filter-btn{
+      background:transparent;border:1.5px solid #C9B08A;color:#7B5B1A;
+      border-radius:50px;padding:.3rem .85rem;font-family:'Lato',sans-serif;
+      font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;
+      transition:background .15s,color .15s;white-space:nowrap;
+    }
+    .filter-btn.active,.filter-btn:hover{background:#7B5B1A;color:#F5EFE4;border-color:#7B5B1A}
+
+    /* GRID */
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+      gap:.85rem;padding:0 .9rem 7rem;
+      max-width:960px;margin:0 auto;
+    }
+
+    /* CARD */
+    .card{
+      background:#fff;border-radius:12px;border:2px solid #E8D5C4;
+      overflow:hidden;cursor:pointer;
+      transition:transform .18s,box-shadow .18s,border-color .18s;
+      position:relative;display:flex;flex-direction:column;
+    }
+    .card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(74,46,10,.15)}
+    .card.selected{border-color:#7B5B1A;box-shadow:0 0 0 3px rgba(123,91,26,.18)}
+    .card.agotado{opacity:.5;cursor:not-allowed}
+
+    /* Galería de imágenes */
+    .img-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+                 scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+    .img-gallery::-webkit-scrollbar{display:none}
+    .img-gallery img{
+      width:100%;flex-shrink:0;scroll-snap-align:start;
+      aspect-ratio:1/1;object-fit:cover;display:block;background:#F5EFE4;
+    }
+    /* Indicador de múltiples imágenes */
+    .img-dots{
+      display:flex;justify-content:center;gap:4px;
+      padding:.3rem 0 .1rem;
+    }
+    .img-dots span{
+      width:5px;height:5px;border-radius:50%;background:#C9B08A;
+    }
+    .img-dots span.active{background:#7B5B1A}
+
+    /* BODY */
+    .card-body{padding:.5rem .65rem .65rem;flex:1;display:flex;flex-direction:column;gap:.2rem}
+    .card-name{font-size:.7rem;font-weight:700;color:#4A2E0A;line-height:1.35;flex:1}
+    .card-qty{font-size:.62rem;color:#A07840;letter-spacing:.05em;text-transform:uppercase}
+    .card-qty span{font-weight:700;color:#7B5B1A}
+    .card-qty .libre-badge{
+      display:inline-block;background:#E8F5E9;color:#2E7D32;
+      border-radius:50px;padding:.05rem .4rem;font-size:.58rem;
+      font-weight:700;letter-spacing:.05em;
+    }
+    .reservados{font-size:.58rem;color:#A07840;font-style:italic;line-height:1.3}
+
+    /* BADGES */
+    .badge{
+      position:absolute;top:.4rem;right:.4rem;
+      border-radius:50px;font-size:.56rem;font-weight:700;
+      letter-spacing:.07em;text-transform:uppercase;padding:.18rem .5rem;
+      line-height:1.2;
+    }
+    .badge-sel{background:#7B5B1A;color:#F5EFE4}
+    .badge-out{background:#D43F3F;color:#fff}
+    .badge-partial{background:#E8C870;color:#4A2E0A}
+    .badge-libre{background:#C8E6C9;color:#1B5E20}
+
+    /* CARRITO */
+    .cart-bar{
+      position:fixed;bottom:0;left:0;right:0;
+      background:#4A2E0A;color:#F5EFE4;
+      padding:.85rem 1.2rem;
+      display:flex;align-items:center;justify-content:space-between;
+      transform:translateY(100%);transition:transform .3s ease;z-index:200;
+    }
+    .cart-bar.visible{transform:translateY(0)}
+    .cart-info{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase}
+    .cart-info strong{font-size:1.1rem;font-weight:700;margin-right:.3rem}
+    .btn-confirm{
+      background:#E8C870;color:#1A0D00;border:none;border-radius:50px;
+      padding:.6rem 1.5rem;font-family:'Lato',sans-serif;font-size:.78rem;
+      font-weight:700;letter-spacing:.13em;text-transform:uppercase;cursor:pointer;
+      transition:background .2s,transform .15s;
+    }
+    .btn-confirm:hover{background:#C9984A;transform:translateY(-1px)}
+
+    /* MODAL */
+    .modal-overlay{
+      position:fixed;inset:0;background:rgba(74,46,10,.55);
+      display:flex;align-items:center;justify-content:center;
+      z-index:300;opacity:0;pointer-events:none;transition:opacity .25s;padding:1rem;
+    }
+    .modal-overlay.open{opacity:1;pointer-events:auto}
+    .modal{
+      background:#F5EFE4;border-radius:16px;padding:1.8rem 1.5rem;
+      max-width:380px;width:100%;
+      transform:translateY(20px);transition:transform .25s;text-align:center;
+    }
+    .modal-overlay.open .modal{transform:translateY(0)}
+    .modal h2{font-family:'Dancing Script',cursive;font-size:1.9rem;color:#7B5B1A;margin-bottom:.35rem}
+    .modal p{font-size:.78rem;color:#7B5B1A;margin-bottom:.9rem;line-height:1.6}
+    .modal-list{
+      text-align:left;list-style:none;margin-bottom:1rem;
+      background:#fff;border-radius:8px;padding:.7rem .9rem;
+      border:1px solid #C9B08A;max-height:150px;overflow-y:auto;
+    }
+    .modal-list li{font-size:.73rem;color:#4A2E0A;padding:.2rem 0;border-bottom:1px solid #F0E4D0}
+    .modal-list li:last-child{border:none}
+    .modal label{display:block;font-size:.72rem;color:#7B5B1A;
+                 letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem;text-align:left}
+    .modal input{
+      width:100%;border:1.5px solid #C9B08A;border-radius:8px;
+      padding:.6rem .85rem;font-family:'Lato',sans-serif;font-size:.9rem;
+      color:#4A2E0A;background:#fff;margin-bottom:.9rem;outline:none;
+    }
+    .modal input:focus{border-color:#7B5B1A}
+    .btn-send{
+      width:100%;background:#4A2E0A;color:#fff;border:none;border-radius:50px;
+      padding:.82rem;font-family:'Lato',sans-serif;font-size:.85rem;
+      font-weight:700;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:background .2s;
+    }
+    .btn-send:hover{background:#7B5B1A}
+    .btn-send:disabled{opacity:.5;cursor:not-allowed}
+    .btn-cancel{
+      margin-top:.5rem;background:transparent;border:none;color:#A07840;
+      font-family:'Lato',sans-serif;font-size:.7rem;cursor:pointer;text-decoration:underline;
+    }
+
+    /* TOAST */
+    .toast{
+      position:fixed;top:1rem;left:50%;
+      transform:translateX(-50%) translateY(-90px);
+      background:#4A2E0A;color:#F5EFE4;border-radius:50px;
+      padding:.6rem 1.4rem;font-size:.78rem;font-weight:700;letter-spacing:.1em;
+      z-index:500;transition:transform .3s ease;white-space:nowrap;
+      max-width:90vw;text-align:center;
+    }
+    .toast.show{transform:translateX(-50%) translateY(0)}
+    .toast.error{background:#D43F3F}
+    .toast.success{background:#2E7D32}
+
+    /* LOADING / SUCCESS */
+    .loading{text-align:center;padding:3rem 1rem;font-size:.78rem;color:#A07840;letter-spacing:.12em;text-transform:uppercase}
+    .spinner{width:30px;height:30px;border:3px solid #E8D5C4;border-top-color:#7B5B1A;
+             border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 1rem}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .success-screen{
+      display:none;flex-direction:column;align-items:center;
+      text-align:center;padding:3rem 1.5rem;
+    }
+    .success-screen.show{display:flex}
+    .success-screen h2{font-family:'Dancing Script',cursive;font-size:2.4rem;color:#7B5B1A;margin-bottom:.8rem}
+    .success-screen p{font-size:.82rem;color:#7B5B1A;line-height:1.7;max-width:300px}
+    .bear-big{font-size:3.5rem;margin-bottom:.8rem}
+  </style>
+</head>
+<body>
+
+<script>
+  // ── CAMBIAR ESTA URL POR LA DE TU APPS SCRIPT ──
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzAE5SDgvi77W9iyhEG2lmSYJHF9x_YADj2dNkPquHcQwmdD85V74yRXpW5bNGudz2Z/exec';
+
+  // 55 productos hardcoded (se pueden sobreescribir desde el Sheet)
+  const PRODUCTOS_DEFAULT = [
+    {id:"1",  nombre:"KIT DE CUIDADO BEBE MOMCOZY ELITE GROOMING",           cantidad:1,    imgs:["1.jpeg"]},
+    {id:"2",  nombre:"PAÑAL WINNY SENSITIVE ETAPA 0 RN X50",                  cantidad:3,    imgs:["2.jpeg"]},
+    {id:"3",  nombre:"PAÑAL WINNY ULTRATRIM SEC ETAPA 1 P X50",               cantidad:3,    imgs:["3.jpeg"]},
+    {id:"4",  nombre:"PAÑAL WINNY ULTRATRIM SEC ETAPA 2 M X50",               cantidad:3,    imgs:["4.jpeg"]},
+    {id:"5",  nombre:"PAÑAL WINNY ULTRATRIM SEC ETAPA 3 G X50",               cantidad:3,    imgs:["5.jpeg"]},
+    {id:"6",  nombre:"TOALLAS HUMEDAS WINNY ALOE Y VITAMINA E X100",          cantidad:0,    imgs:["6.jpeg","6_1.jpeg"]},
+    {id:"7",  nombre:"CREMA NO.4 MEDICADA NISTATINA Y ZINC 60G",              cantidad:0,    imgs:["7.jpeg","7_1.jpeg"]},
+    {id:"8",  nombre:"ALMIPRO UNGUENTO PAÑALITIS 500G",                       cantidad:2,    imgs:["8.jpeg"]},
+    {id:"9",  nombre:"JABON LIQUIDO JOHNSON'S BAÑO ANTES DE DORMIR 400ML",    cantidad:0,    imgs:["9.jpeg","9_1.jpeg"]},
+    {id:"10", nombre:"CREMA HIDRATANTE (BABY DOVE, CETAPHIL, JOHNSONS)",      cantidad:5,    imgs:["10.jpeg","10_1.jpeg"]},
+    {id:"11", nombre:"CETAPHIL BABY WASH & SHAMPOO CON CALENDULA",            cantidad:3,    imgs:["11.jpeg"]},
+    {id:"12", nombre:"NATURA MAMAE E BEBE AGUA DE COLONIA 100ML",             cantidad:2,    imgs:["12.jpeg"]},
+    {id:"13", nombre:"ARRURRU COLONIA ORIGINAL 220ML",                        cantidad:2,    imgs:["13.jpeg"]},
+    {id:"14", nombre:"CREMA CORPORAL JOHNSONS BABY DERMA PROTECT 200ML",      cantidad:3,    imgs:["14.jpeg"]},
+    {id:"15", nombre:"CREMA LIQUIDA JOHNSON'S PARA ANTES DE DORMIR 200ML",    cantidad:3,    imgs:["15.jpeg"]},
+    {id:"16", nombre:"JUEGO CEPILLO Y PEINE MADERA KEABABIES",                cantidad:2,    imgs:["16.jpeg","16_1.jpeg"]},
+    {id:"17", nombre:"CEPILLO MASAJEADOR ONLYBABY PARA ENCIAS BEBE",          cantidad:0,    imgs:["17.jpeg","17_1.jpeg"]},
+    {id:"18", nombre:"KIT CUIDADO UÑAS BABY CARE KIT 8 PIEZAS",              cantidad:2,    imgs:["18.jpeg","18_1.jpeg"]},
+    {id:"19", nombre:"LIMA ELECTRICA CUTEBABIES PARA BEBE",                   cantidad:2,    imgs:["19.jpeg"]},
+    {id:"20", nombre:"TALCOS JOHNSONS BABY ORIGINAL X200GR",                  cantidad:0,    imgs:["20.jpeg"]},
+    {id:"21", nombre:"ACEITE CORPORAL JOHNSON'S ANTES DE DORMIR 100ML",       cantidad:0,    imgs:["21.jpeg"]},
+    {id:"22", nombre:"GORRO TEJIDO BABY FRESH CON OREJAS",                    cantidad:2,    imgs:["22.jpeg"]},
+    {id:"23", nombre:"CAMISETA DINOSAURIOS X3 UNIDADES",                      cantidad:2,    imgs:["23.jpeg","23_1.jpeg"]},
+    {id:"24", nombre:"CAMISETA SIN MANGA COLORES X5 UNIDADES",                cantidad:2,    imgs:["24.jpeg"]},
+    {id:"25", nombre:"PANTALONES BEBE ALGODON X3 UNIDADES",                   cantidad:2,    imgs:["25.jpeg"]},
+    {id:"26", nombre:"OVERALL ENTERIZO CON CAMISETA BEBE",                    cantidad:2,    imgs:["26.jpeg","26_1.jpeg"]},
+    {id:"27", nombre:"ABRIGO BABY FRESH SUAVIDAD Y PROTECCION",               cantidad:1,    imgs:["27.jpeg"]},
+    {id:"28", nombre:"MORDEDOR RASCA ENCIAS SILICONA ENFANTACY",              cantidad:0,    imgs:["28.jpeg"]},
+    {id:"29", nombre:"BABEROS DE SILICONA X3 UNIDADES",                       cantidad:0,    imgs:["29.jpeg"]},
+    {id:"30", nombre:"SUETER PUNTO CON CAPUCHA MIMIXIONG",                    cantidad:2,    imgs:["30.jpeg"]},
+    {id:"31", nombre:"TAPETE PLEGABLE DOBLE FAZ PARA BEBE",                   cantidad:1,    imgs:["31.jpeg"]},
+    {id:"32", nombre:"SET JUGUETES ESTIMULACION TEMPRANA",                    cantidad:2,    imgs:["32.jpeg"]},
+    {id:"33", nombre:"FISHER PRICE GIMNASIO PRIMEROS SENTIDOS",               cantidad:1,    imgs:["33.jpeg"]},
+    {id:"34", nombre:"MOVIL MUSICAL BABY'S ONLY ESTRELLAS",                   cantidad:1,    imgs:["34.jpeg","34_1.jpeg","34_2.jpeg"]},
+    {id:"35", nombre:"TERMO AGUA CALIENTE BEBE 450ML",                        cantidad:2,    imgs:["35.jpeg"]},
+    {id:"36", nombre:"ORGANIZADOR PAÑALES PARA CUNA CAMBIADOR",               cantidad:1,    imgs:["36.jpeg","36_2.jpeg"]},
+    {id:"37", nombre:"PAÑALERA MULTIFUNCIONAL DUOHUI CON MONEDERO",           cantidad:1,    imgs:["37.jpeg","37_2.jpeg"]},
+    {id:"38", nombre:"COBIJA TERMICA DOBLE FAZ AZUL BEBE",                    cantidad:2,    imgs:["38.jpeg"]},
+    {id:"39", nombre:"COBIJA HABANO ESTAMPADO BABY FRESH",                    cantidad:2,    imgs:["39.jpeg"]},
+    {id:"40", nombre:"SONAJEROS ESTIMULACION TEMPRANA MEDIAS PULSERAS X4",    cantidad:0,    imgs:["40.jpeg"]},
+    {id:"41", nombre:"ALMOHADA MOLDEADORA BEBE NUBBA BY TORAL",               cantidad:1,    imgs:["41.jpeg"]},
+    {id:"42", nombre:"BATA DE BAÑO OSITO MARRON BEBE",                        cantidad:2,    imgs:["42.jpeg"]},
+    {id:"43", nombre:"TOALLA CON CAPUCHA OSO BLANCO BEBE",                    cantidad:2,    imgs:["43.jpeg"]},
+    {id:"44", nombre:"PACK MEDIAS ANIMALES X3 UNIDADES",                      cantidad:0,    imgs:["44.jpeg"]},
+    {id:"45", nombre:"SET SONAJEROS COLORIDOS X9 PIEZAS",                     cantidad:2,    imgs:["45.jpeg"]},
+    {id:"46", nombre:"SABANAS BEBE NOMADE BUE",                               cantidad:2,    imgs:["46.jpeg"]},
+    {id:"47", nombre:"MOSQUITERO PLEGABLE PORTATIL MAGIC BABY",               cantidad:1,    imgs:["47.jpeg"]},
+    {id:"48", nombre:"SLEEPING BAG COZY PIXIES BEBE",                         cantidad:1,    imgs:["48.jpeg"]},
+    {id:"49", nombre:"ORGANIZADOR PAÑALES CUNA COLGAR CAMBIADOR",             cantidad:1,    imgs:["49.jpeg","49_2.jpeg"]},
+    {id:"50", nombre:"COJIN MATERNO LACTANCIA MULTIUSOS ERGONOMICO",          cantidad:1,    imgs:["50.jpeg"]},
+    {id:"51", nombre:"BOLSAS ALMACENAMIENTO LECHE MATERNA LANSINOH X25",      cantidad:3,    imgs:["51.jpeg"]},
+    {id:"52", nombre:"PROTECTORES DE LACTANCIA NOSOTRAS X40",                 cantidad:0,    imgs:["52.jpeg"]},
+    {id:"53", nombre:"COPAS RECOLECTORAS LECHE MATERNA SILICONA",             cantidad:2,    imgs:["53.jpeg"]},
+    {id:"54", nombre:"MOISÉS / CUNA COLECHO PORTATIL",                        cantidad:1,    imgs:["54.jpeg"]},
+    {id:"55", nombre:"COCHE TRAVEL SYSTEM 3EN1",                              cantidad:1,    imgs:["55.jpeg"]},
+  ];
+
+  // Categorías
+  const CATS = {
+    'Higiene':  ["6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21"],
+    'Ropa':     ["22","23","24","25","26","27","28","29","30"],
+    'Sueño':    ["31","34","38","39","40","41","42","43","44","45","46","47","48"],
+    'Juguetes': ["32","33","35","40","45"],
+    'Alimentación': ["28","29","50","51","52","53"],
+    'Higiene bebé': ["1","2","3","4","5"],
+    'Para mamá':["49","54","55"],
+  };
+</script>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- HEADER -->
+<div class="top-bar">
+  <a href="index.html">← Invitación</a>
+  <span class="top-label">Baby Shower · Martín</span>
+</div>
+
+<h1 class="page-title">Regalos Sugeridos 🎁</h1>
+<p class="page-sub">✦ Selecciona lo que llevarás para Martín ✦</p>
+
+<!-- FILTROS -->
+<div class="filters" id="filters">
+  <button class="filter-btn active" data-cat="Todos">Todos (55)</button>
+  <button class="filter-btn" data-cat="Higiene bebé">Higiene bebé</button>
+  <button class="filter-btn" data-cat="Higiene">Cuidado personal</button>
+  <button class="filter-btn" data-cat="Ropa">Ropa</button>
+  <button class="filter-btn" data-cat="Sueño">Sueño & hogar</button>
+  <button class="filter-btn" data-cat="Juguetes">Juguetes</button>
+  <button class="filter-btn" data-cat="Alimentación">Alimentación</button>
+  <button class="filter-btn" data-cat="Para mamá">Para mamá</button>
+</div>
+
+<!-- GRID -->
+<div class="grid" id="grid">
+  <div class="loading"><div class="spinner"></div>Cargando regalos...</div>
+</div>
+
+<!-- SUCCESS -->
+<div class="success-screen" id="successScreen">
+  <div class="bear-big">🐻</div>
+  <h2>¡Muchas gracias!</h2>
+  <p>Tu selección quedó guardada.<br>Martín y su familia están felices de contarte 🎊</p>
+</div>
+
+<!-- CARRITO -->
+<div class="cart-bar" id="cartBar">
+  <div class="cart-info">
+    <strong id="cartCount">0</strong> regalo(s) seleccionado(s)
+  </div>
+  <button class="btn-confirm" onclick="openModal()">Confirmar</button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>Confirmar 🎁</h2>
+    <p>Revisa tu selección e ingresa tu nombre para guardarla.</p>
+    <ul class="modal-list" id="modalList"></ul>
+    <label for="nameInput">Nombre completo</label>
+    <input type="text" id="nameInput" placeholder="Ej: María García" maxlength="80" autocomplete="name"/>
+    <button class="btn-send" id="btnSend" onclick="sendReserva()">Guardar mi selección 🎁</button>
+    <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+// ── Estado ────────────────────────────────────────────────────
+let productos = [];
+let reservas  = {};          // { id: [nombre1, nombre2, ...] }
+let selected  = new Set();
+let catActiva = 'Todos';
+
+// ── Helpers ───────────────────────────────────────────────────
+function isLibre(prod)   { return prod.cantidad === 0; }
+function countRes(id)    { return (reservas[id] || []).length; }
+function isAgotado(prod) {
+  if (isLibre(prod)) return false;
+  return countRes(prod.id) >= prod.cantidad;
+}
+function getCat(id) {
+  for (const [cat, ids] of Object.entries(CATS))
+    if (ids.includes(String(id))) return cat;
+  return '';
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' '+type : '');
+  setTimeout(() => el.className='toast', 2800);
+}
+
+// ── Render ────────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('grid');
+
+  const lista = catActiva === 'Todos'
+    ? productos
+    : productos.filter(p => getCat(p.id) === catActiva);
+
+  if (!lista.length) {
+    grid.innerHTML = '<div class="loading">Sin productos en esta categoría</div>';
+    return;
+  }
+
+  grid.innerHTML = lista.map(prod => {
+    const agotado  = isAgotado(prod);
+    const isSel    = selected.has(prod.id);
+    const libre    = isLibre(prod);
+    const cnt      = countRes(prod.id);
+    const personas = reservas[prod.id] || [];
+    const imgs     = prod.imgs || [`${prod.id}.jpeg`];
+    const multiImg = imgs.length > 1;
+
+    // Badge
+    let badge = '';
+    if (isSel)         badge = `<span class="badge badge-sel">✓ Yo lo llevo</span>`;
+    else if (agotado)  badge = `<span class="badge badge-out">Completo</span>`;
+    else if (libre)    badge = `<span class="badge badge-libre">∞ Libre</span>`;
+    else if (cnt > 0)  badge = `<span class="badge badge-partial">${cnt}/${prod.cantidad} tomado</span>`;
+
+    // Galería
+    const galeria = imgs.map((img,i) =>
+      `<img src="images/${img}" alt="${prod.nombre}" loading="lazy"
+            onerror="this.style.display='none'"
+            style="${i>0?'min-width:100%;':'min-width:100%;'}">`
+    ).join('');
+
+    const dots = multiImg
+      ? `<div class="img-dots">${imgs.map((_,i)=>`<span class="${i===0?'active':''}"></span>`).join('')}</div>`
+      : '';
+
+    // Cantidad
+    let cantHTML = '';
+    if (libre) {
+      cantHTML = `<div class="card-qty"><span class="libre-badge">∞ Sin límite</span></div>`;
+    } else {
+      const disp = Math.max(0, prod.cantidad - cnt);
+      cantHTML = `<div class="card-qty">Disponibles: <span>${disp}</span> de ${prod.cantidad}</div>`;
+    }
+
+    // Quién reservó
+    const resHTML = personas.length
+      ? `<div class="reservados">👤 ${personas.slice(0,3).join(', ')}${personas.length>3?' +más':''}</div>`
+      : '';
+
+    return `
+<div class="card${isSel?' selected':''}${agotado&&!isSel?' agotado':''}"
+     data-id="${prod.id}" onclick="toggleSelect('${prod.id}')">
+  <div class="img-gallery" onclick="event.stopPropagation();scrollGallery(event,this)">${galeria}</div>
+  ${dots}
+  ${badge}
+  <div class="card-body">
+    <div class="card-name">${prod.nombre}</div>
+    ${cantHTML}
+    ${resHTML}
+  </div>
+</div>`;
+  }).join('');
+
+  // Inicializar scroll observer para dots
+  initDots();
+}
+
+// ── Scroll galería con dots ───────────────────────────────────
+function scrollGallery(e, gallery) {
+  // Solo si hay múltiples imágenes
+  if (gallery.children.length <= 1) return;
+  const rect  = gallery.getBoundingClientRect();
+  const half  = rect.width / 2;
+  const clickX= e.clientX - rect.left;
+  if (clickX > half) {
+    gallery.scrollBy({left: rect.width, behavior:'smooth'});
+  } else {
+    gallery.scrollBy({left:-rect.width, behavior:'smooth'});
+  }
+}
+
+function initDots() {
+  document.querySelectorAll('.img-gallery').forEach(gallery => {
+    const card = gallery.closest('.card');
+    const dots = card ? card.querySelectorAll('.img-dots span') : [];
+    if (!dots.length) return;
+    gallery.addEventListener('scroll', () => {
+      const idx = Math.round(gallery.scrollLeft / gallery.offsetWidth);
+      dots.forEach((d,i) => d.classList.toggle('active', i===idx));
+    }, {passive:true});
+  });
+}
+
+// ── Toggle selección ──────────────────────────────────────────
+function toggleSelect(id) {
+  const prod = productos.find(p => p.id === id);
+  if (!prod) return;
+  if (selected.has(id)) {
+    selected.delete(id);
+    showToast(`Eliminado de tu selección`);
+  } else {
+    if (isAgotado(prod)) { showToast('Este regalo ya está completo 😔','error'); return; }
+    selected.add(id);
+    showToast(`✓ ${prod.nombre.slice(0,40)}...`);
+  }
+  updateCart();
+  renderGrid();
+}
+
+// ── Carrito ───────────────────────────────────────────────────
+function updateCart() {
+  document.getElementById('cartCount').textContent = selected.size;
+  document.getElementById('cartBar').classList.toggle('visible', selected.size > 0);
+}
+
+// ── Modal ─────────────────────────────────────────────────────
+function openModal() {
+  if (!selected.size) return;
+  document.getElementById('modalList').innerHTML = [...selected].map(id => {
+    const p = productos.find(x => x.id===id);
+    return `<li>🎁 ${p ? p.nombre : id}</li>`;
+  }).join('');
+  document.getElementById('nameInput').value = '';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+
+// ── Enviar ────────────────────────────────────────────────────
+async function sendReserva() {
+  const nombre = document.getElementById('nameInput').value.trim();
+  if (!nombre) { showToast('Ingresa tu nombre completo','error'); return; }
+
+  const btn = document.getElementById('btnSend');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  try {
+    const resp = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ nombre, productos:[...selected] })
+    });
+    const data = await resp.json();
+
+    if (data.ok) {
+      closeModal();
+      document.getElementById('grid').style.display    = 'none';
+      document.getElementById('filters').style.display  = 'none';
+      document.querySelector('.page-sub').style.display = 'none';
+      document.getElementById('cartBar').classList.remove('visible');
+      document.getElementById('successScreen').classList.add('show');
+      showToast(data.mensaje || '¡Listo!', 'success');
+    } else {
+      showToast(data.error || 'Error al guardar', 'error');
+      btn.disabled=false; btn.textContent='Guardar mi selección 🎁';
+    }
+  } catch(err) {
+    showToast('Error de conexión. Intenta de nuevo.','error');
+    btn.disabled=false; btn.textContent='Guardar mi selección 🎁';
+  }
+}
+
+// ── Filtros ───────────────────────────────────────────────────
+document.getElementById('filters').addEventListener('click', e => {
+  if (!e.target.classList.contains('filter-btn')) return;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  catActiva = e.target.dataset.cat;
+  renderGrid();
+});
+
+// ── Carga inicial ─────────────────────────────────────────────
+async function loadData() {
+  try {
+    const resp = await fetch(API_URL + '?t=' + Date.now());
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error);
+
+    // Combinar datos del Sheet con imgs locales
+    const localMap = {};
+    PRODUCTOS_DEFAULT.forEach(p => localMap[p.id] = p);
+
+    productos = data.productos.map(p => ({
+      ...p,
+      imgs: localMap[p.id]?.imgs || [`${p.id}.jpeg`]
+    }));
+    reservas = data.reservas || {};
+    renderGrid();
+  } catch(err) {
+    // Fallback: usar datos locales sin reservas
+    console.warn('API no disponible, usando datos locales:', err.message);
+    productos = PRODUCTOS_DEFAULT;
+    reservas  = {};
+    renderGrid();
+    showToast('Modo vista previa — API no conectada','error');
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
