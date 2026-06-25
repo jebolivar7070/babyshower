@@ -542,43 +542,37 @@ document.getElementById('filters').addEventListener('click', e => {
 
 // ── Carga inicial ─────────────────────────────────────────────
 async function loadData() {
-  // Siempre mostrar productos locales inmediatamente
-  productos = PRODUCTOS_DEFAULT;
+  // 1. Mostrar los 55 productos locales INMEDIATAMENTE — nunca se borran
+  productos = JSON.parse(JSON.stringify(PRODUCTOS_DEFAULT)); // copia profunda
   reservas  = {};
   renderGrid();
 
-  // Luego intentar cargar reservas reales desde la API
+  // 2. En paralelo, cargar reservas reales desde la API (solo para mostrar quién reservó)
   if (!API_URL || API_URL.includes('TU_APPS')) return;
 
   try {
     const controller = new AbortController();
-    const timeoutId  = setTimeout(() => controller.abort(), 8000);
+    setTimeout(() => controller.abort(), 6000); // timeout 6s
 
     const resp = await fetch(API_URL + '?t=' + Date.now(), {
       signal: controller.signal
     });
-    clearTimeout(timeoutId);
 
     const text = await resp.text();
-    let data;
-    try { data = JSON.parse(text); } catch(_) { return; }
+    if (!text || !text.startsWith('{')) return; // no es JSON válido
 
-    if (!data.ok || !data.productos) return;
+    const data = JSON.parse(text);
+    if (!data || !data.ok) return; // API devolvió error — mantener datos locales
 
-    // Combinar datos del Sheet con imgs locales
-    const localMap = {};
-    PRODUCTOS_DEFAULT.forEach(p => localMap[p.id] = p);
-
-    productos = data.productos.map(p => ({
-      ...p,
-      imgs: localMap[String(p.id)]?.imgs || [String(p.id) + '.jpeg']
-    }));
-    reservas = data.reservas || {};
-    renderGrid(); // re-render con reservas reales
+    // Solo actualizar las RESERVAS, nunca tocar la lista de productos
+    if (data.reservas) {
+      reservas = data.reservas;
+      renderGrid(); // re-render solo para mostrar quién ya reservó
+    }
 
   } catch(err) {
-    // Ya mostramos los productos locales, solo log silencioso
-    console.warn('API:', err.message);
+    // Silencioso — los productos locales siguen visibles
+    console.log('Reservas no cargadas:', err.message);
   }
 }
 
