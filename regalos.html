@@ -65,12 +65,19 @@
     .card.agotado{opacity:.5;cursor:not-allowed}
 
     /* Galería de imágenes */
-    .img-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
-                 scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+    .img-gallery{
+      display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
+      scrollbar-width:none;-webkit-overflow-scrolling:touch;
+      cursor:grab;user-select:none;-webkit-user-select:none;
+      touch-action:pan-x;
+    }
     .img-gallery::-webkit-scrollbar{display:none}
+    .img-gallery.dragging{cursor:grabbing}
     .img-gallery img{
       width:100%;flex-shrink:0;scroll-snap-align:start;
       aspect-ratio:1/1;object-fit:cover;display:block;background:#F5EFE4;
+      pointer-events:none;
+      -webkit-user-drag:none;
     }
     /* Indicador de múltiples imágenes */
     .img-dots{
@@ -262,13 +269,14 @@
 
   // Categorías
   const CATS = {
-    'Higiene':  ["6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21"],
-    'Ropa':     ["22","23","24","25","26","27","28","29","30"],
-    'Sueño':    ["31","34","38","39","40","41","42","43","44","45","46","47","48"],
-    'Juguetes': ["32","33","35","40","45"],
-    'Alimentación': ["28","29","50","51","52","53"],
-    'Higiene bebé': ["1","2","3","4","5"],
-    'Para mamá':["49","54","55"],
+    'Pañales':      ["1","2","3","4","5"],
+    'Higiene':      ["6","7","8","9","10","11","12","13","14","15","16","17"],
+    'Ropa':         ["18","19","20","21","22","23","24","25","26"],
+    'Juguetes':     ["27","28","29","30","37","39"],
+    'Accesorios':   ["31","32","33","35","36","38","46","47","48","49"],
+    'Alimentación': ["40","41","42","43","44","45"],
+    'Para mamá':    ["50","51","52","53"],
+    'Grandes':      ["34","54","55"],
   };
 </script>
 
@@ -287,13 +295,14 @@
 <!-- FILTROS -->
 <div class="filters" id="filters">
   <button class="filter-btn active" data-cat="Todos">Todos (55)</button>
-  <button class="filter-btn" data-cat="Higiene bebé">Higiene bebé</button>
-  <button class="filter-btn" data-cat="Higiene">Cuidado personal</button>
+  <button class="filter-btn" data-cat="Pañales">Pañales</button>
+  <button class="filter-btn" data-cat="Higiene">Higiene</button>
   <button class="filter-btn" data-cat="Ropa">Ropa</button>
-  <button class="filter-btn" data-cat="Sueño">Sueño & hogar</button>
   <button class="filter-btn" data-cat="Juguetes">Juguetes</button>
+  <button class="filter-btn" data-cat="Accesorios">Accesorios</button>
   <button class="filter-btn" data-cat="Alimentación">Alimentación</button>
   <button class="filter-btn" data-cat="Para mamá">Para mamá</button>
+  <button class="filter-btn" data-cat="Grandes">Grandes</button>
 </div>
 
 <!-- GRID -->
@@ -431,28 +440,81 @@ function renderGrid() {
 
 // ── Scroll galería con dots ───────────────────────────────────
 function scrollGallery(e, gallery) {
-  // Scroll de galería — NO propagar el evento al card padre
+  // Click simple en galería — avanzar/retroceder
   e.stopPropagation();
   if (gallery.children.length <= 1) return;
-  const rect  = gallery.getBoundingClientRect();
-  const half  = rect.width / 2;
-  const clickX= e.clientX - rect.left;
-  if (clickX > half) {
+  if (gallery._wasDragging) { gallery._wasDragging = false; return; }
+  const rect   = gallery.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  if (clickX > rect.width / 2) {
     gallery.scrollBy({left: rect.width, behavior:'smooth'});
   } else {
     gallery.scrollBy({left:-rect.width, behavior:'smooth'});
   }
 }
 
+// ── Inicializar drag (mouse) y swipe (touch) en galerías ──
+function initDragSwipe(gallery) {
+  if (gallery.children.length <= 1) return;
+  let startX = 0, startScroll = 0, isDragging = false;
+
+  // MOUSE drag
+  gallery.addEventListener('mousedown', e => {
+    isDragging  = true;
+    startX      = e.pageX;
+    startScroll = gallery.scrollLeft;
+    gallery.classList.add('dragging');
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.pageX - startX;
+    gallery.scrollLeft = startScroll - dx;
+  });
+  document.addEventListener('mouseup', e => {
+    if (!isDragging) return;
+    isDragging = false;
+    gallery.classList.remove('dragging');
+    const dx = e.pageX - startX;
+    if (Math.abs(dx) > 30) {
+      gallery._wasDragging = true;
+      // Snap al slide más cercano
+      const w = gallery.offsetWidth;
+      const idx = Math.round(gallery.scrollLeft / w);
+      gallery.scrollTo({left: idx * w, behavior:'smooth'});
+    }
+  });
+
+  // TOUCH swipe — el navegador ya maneja pan-x nativo con scroll-snap
+  // Solo necesitamos detectar si fue swipe para no disparar toggleSelect
+  let touchStartX = 0;
+  gallery.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+  }, {passive:true});
+  gallery.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 20) {
+      gallery._wasDragging = true;
+      e.stopPropagation();
+    }
+  }, {passive:true});
+}
+
 function initDots() {
   document.querySelectorAll('.img-gallery').forEach(gallery => {
     const card = gallery.closest('.card');
     const dots = card ? card.querySelectorAll('.img-dots span') : [];
-    if (!dots.length) return;
-    gallery.addEventListener('scroll', () => {
-      const idx = Math.round(gallery.scrollLeft / gallery.offsetWidth);
-      dots.forEach((d,i) => d.classList.toggle('active', i===idx));
-    }, {passive:true});
+
+    // Dots sync
+    if (dots.length) {
+      gallery.addEventListener('scroll', () => {
+        const idx = Math.round(gallery.scrollLeft / gallery.offsetWidth);
+        dots.forEach((d,i) => d.classList.toggle('active', i===idx));
+      }, {passive:true});
+    }
+
+    // Drag & swipe
+    initDragSwipe(gallery);
   });
 }
 
