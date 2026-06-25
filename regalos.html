@@ -193,12 +193,21 @@
     @keyframes spin{to{transform:rotate(360deg)}}
     .success-screen{
       display:none;flex-direction:column;align-items:center;
-      text-align:center;padding:3rem 1.5rem;
+      text-align:center;padding:3rem 1.5rem;gap:.8rem;
     }
     .success-screen.show{display:flex}
-    .success-screen h2{font-family:'Dancing Script',cursive;font-size:2.4rem;color:#7B5B1A;margin-bottom:.8rem}
-    .success-screen p{font-size:.82rem;color:#7B5B1A;line-height:1.7;max-width:300px}
-    .bear-big{font-size:3.5rem;margin-bottom:.8rem}
+    .success-screen h2{font-family:'Dancing Script',cursive;font-size:2.4rem;color:#7B5B1A;margin-bottom:.2rem}
+    .success-screen p{font-size:.82rem;color:#7B5B1A;line-height:1.7;max-width:300px;margin:0}
+    .bear-big{font-size:3.5rem;margin-bottom:.2rem}
+    .btn-volver-lista{
+      margin-top:.6rem;
+      background:#4A2E0A;color:#F5EFE4;border:none;
+      border-radius:50px;padding:.75rem 2rem;
+      font-family:'Lato',sans-serif;font-size:.82rem;
+      font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+      cursor:pointer;transition:background .2s,transform .15s;
+    }
+    .btn-volver-lista:hover{background:#7B5B1A;transform:translateY(-1px)}
 
     /* ── BOTÓN FLOTANTE WHATSAPP ── */
     .wsp-btn {
@@ -339,7 +348,7 @@
 
 <!-- HEADER -->
 <div class="top-bar">
-  <a href="index.html">← Invitación</a>
+  <a href="index.html?vista=invitacion">← Invitación</a>
   <span class="top-label">Baby Shower · Martín</span>
 </div>
 
@@ -369,6 +378,7 @@
   <div class="bear-big">🐻</div>
   <h2>¡Muchas gracias!</h2>
   <p>Tu selección quedó guardada.</p>
+  <button class="btn-volver-lista" onclick="volverALista()">← Volver a la lista</button>
 </div>
 
 <!-- CARRITO -->
@@ -701,6 +711,25 @@ document.getElementById('filters').addEventListener('click', e => {
 });
 
 // ── Carga inicial ─────────────────────────────────────────────
+// ── Volver a la lista desde la pantalla de éxito ────────────
+function volverALista() {
+  // Resetear estado de selección
+  selected.clear();
+  updateCart();
+
+  // Ocultar success, mostrar grid y filtros
+  document.getElementById('successScreen').classList.remove('show');
+  document.getElementById('grid').style.display     = '';
+  document.getElementById('filters').style.display  = '';
+  document.querySelector('.page-sub').style.display = '';
+
+  // Actualizar reservas desde la API para reflejar cantidades reales
+  fetchReservas();
+
+  // Scroll al top
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
 // ── Cargar reservas desde la API ─────────────────────────────
 async function fetchReservas() {
   if (!API_URL || API_URL.includes('TU_APPS')) return;

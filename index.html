@@ -850,6 +850,16 @@
     }
     document.getElementById('cover').style.display = 'flex';
   }
+
+  // Si viene desde regalos.html con ?vista=invitacion → abrir directo la vista 2
+  if (new URLSearchParams(window.location.search).get('vista') === 'invitacion') {
+    // Esperar a que el DOM esté listo y luego mostrar la invitación
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(showInvite, 100);
+    });
+    // Por si DOMContentLoaded ya ocurrió
+    if (document.readyState !== 'loading') setTimeout(showInvite, 100);
+  }
 </script>
 
 </body>
