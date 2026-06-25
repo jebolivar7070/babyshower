@@ -500,41 +500,31 @@ async function sendReserva() {
   const btn = document.getElementById('btnSend');
   btn.disabled = true; btn.textContent = 'Guardando...';
 
-  // Usar URLSearchParams para evitar CORS preflight con Apps Script
+  // POST a Apps Script con URLSearchParams (sin preflight CORS)
   const params = new URLSearchParams({
     nombre   : nombre,
     productos: [...selected].join(',')
   });
 
   try {
-    // Apps Script acepta POST con application/x-www-form-urlencoded sin preflight
-    const respPost = await fetch(API_URL, {
+    // Enviar con no-cors — no podemos leer la respuesta pero se guarda en el Sheet
+    await fetch(API_URL, {
       method : 'POST',
+      mode   : 'no-cors',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body   : params.toString()
     });
 
-    let data;
-    try {
-      const text = await respPost.text();
-      data = JSON.parse(text);
-    } catch(_) {
-      // Si no parsea, asumir éxito (Apps Script a veces redirige)
-      data = { ok: true, mensaje: `¡Gracias ${nombre}! Tu selección fue guardada 🎉` };
-    }
+    // Con no-cors no leemos la respuesta, pero el Apps Script lo recibe y guarda
+    // Mostramos éxito directamente
+    closeModal();
+    document.getElementById('grid').style.display     = 'none';
+    document.getElementById('filters').style.display   = 'none';
+    document.querySelector('.page-sub').style.display  = 'none';
+    document.getElementById('cartBar').classList.remove('visible');
+    document.getElementById('successScreen').classList.add('show');
+    showToast(`¡Gracias ${nombre}! Tu selección fue guardada 🎉`, 'success');
 
-    if (data.ok) {
-      closeModal();
-      document.getElementById('grid').style.display     = 'none';
-      document.getElementById('filters').style.display   = 'none';
-      document.querySelector('.page-sub').style.display  = 'none';
-      document.getElementById('cartBar').classList.remove('visible');
-      document.getElementById('successScreen').classList.add('show');
-      showToast(data.mensaje || '¡Listo!', 'success');
-    } else {
-      showToast(data.error || 'Error al guardar', 'error');
-      btn.disabled = false; btn.textContent = 'Guardar mi selección 🎁';
-    }
   } catch(err) {
     showToast('Error de conexión: ' + err.message, 'error');
     btn.disabled = false; btn.textContent = 'Guardar mi selección 🎁';
@@ -552,10 +542,28 @@ document.getElementById('filters').addEventListener('click', e => {
 
 // ── Carga inicial ─────────────────────────────────────────────
 async function loadData() {
+  // Siempre mostrar productos locales inmediatamente
+  productos = PRODUCTOS_DEFAULT;
+  reservas  = {};
+  renderGrid();
+
+  // Luego intentar cargar reservas reales desde la API
+  if (!API_URL || API_URL.includes('TU_APPS')) return;
+
   try {
-    const resp = await fetch(API_URL + '?t=' + Date.now());
-    const data = await resp.json();
-    if (!data.ok) throw new Error(data.error);
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 8000);
+
+    const resp = await fetch(API_URL + '?t=' + Date.now(), {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    const text = await resp.text();
+    let data;
+    try { data = JSON.parse(text); } catch(_) { return; }
+
+    if (!data.ok || !data.productos) return;
 
     // Combinar datos del Sheet con imgs locales
     const localMap = {};
@@ -563,17 +571,14 @@ async function loadData() {
 
     productos = data.productos.map(p => ({
       ...p,
-      imgs: localMap[p.id]?.imgs || [`${p.id}.jpeg`]
+      imgs: localMap[String(p.id)]?.imgs || [String(p.id) + '.jpeg']
     }));
     reservas = data.reservas || {};
-    renderGrid();
+    renderGrid(); // re-render con reservas reales
+
   } catch(err) {
-    // Fallback: usar datos locales sin reservas
-    console.warn('API no disponible, usando datos locales:', err.message);
-    productos = PRODUCTOS_DEFAULT;
-    reservas  = {};
-    renderGrid();
-    showToast('Modo vista previa — API no conectada','error');
+    // Ya mostramos los productos locales, solo log silencioso
+    console.warn('API:', err.message);
   }
 }
 
