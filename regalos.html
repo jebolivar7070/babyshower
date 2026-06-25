@@ -666,39 +666,33 @@ async function sendReserva() {
   const nombre = document.getElementById('nameInput').value.trim();
   if (!nombre) { showToast('Ingresa tu nombre completo','error'); return; }
 
-  const btn = document.getElementById('btnSend');
-  btn.disabled = true; btn.textContent = 'Guardando...';
-
-  // POST a Apps Script con URLSearchParams (sin preflight CORS)
+  const seleccionados = [...selected];
   const params = new URLSearchParams({
     nombre   : nombre,
-    productos: [...selected].join(',')
+    productos: seleccionados.join(',')
   });
 
+  // ── Actualización optimista INMEDIATA ────────────────────
+  // Mostrar éxito al instante sin esperar la red
+  confirmarLocalmente(nombre, seleccionados);
+  closeModal();
+  document.getElementById('grid').style.display     = 'none';
+  document.getElementById('filters').style.display   = 'none';
+  document.querySelector('.page-sub').style.display  = 'none';
+  document.getElementById('cartBar').classList.remove('visible');
+  document.getElementById('successScreen').classList.add('show');
+  showToast(`¡Gracias ${nombre}! Tu selección fue guardada 🎉`, 'success');
+
+  // ── Enviar a la API en paralelo (fire & forget) ───────────
+  // No bloqueamos la UI — si falla, los datos locales ya están actualizados
   try {
-    // Enviar con no-cors — no podemos leer la respuesta pero se guarda en el Sheet
-    await fetch(API_URL, {
+    fetch(API_URL, {
       method : 'POST',
       mode   : 'no-cors',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body   : params.toString()
-    });
-
-    // Con no-cors no leemos la respuesta, pero el Apps Script lo recibe y guarda
-    // Actualización optimista: reflejar localmente las reservas de esta persona
-    confirmarLocalmente(nombre, [...selected]);
-    closeModal();
-    document.getElementById('grid').style.display     = 'none';
-    document.getElementById('filters').style.display   = 'none';
-    document.querySelector('.page-sub').style.display  = 'none';
-    document.getElementById('cartBar').classList.remove('visible');
-    document.getElementById('successScreen').classList.add('show');
-    showToast(`¡Gracias ${nombre}! Tu selección fue guardada 🎉`, 'success');
-
-  } catch(err) {
-    showToast('Error de conexión: ' + err.message, 'error');
-    btn.disabled = false; btn.textContent = 'Guardar mi selección 🎁';
-  }
+    }).catch(() => {}); // silencioso si falla
+  } catch(_) {}
 }
 
 // ── Filtros ───────────────────────────────────────────────────
