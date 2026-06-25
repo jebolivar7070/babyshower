@@ -238,13 +238,14 @@
     /* Dos columnas: ubicación | regalos */
     .inv-two-cols {
       display: flex;
-      gap: .7rem;
+      gap: .45rem;
       width: 100%;
       align-items: flex-start;
       margin: .3rem 0;
     }
     .inv-col {
       flex: 1;
+      min-width: 0;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
@@ -269,6 +270,8 @@
       display: flex;
       align-items: center;
     }
+    /* en 3 columnas los ositos son más compactos */
+    .bear-pin-wrap svg, .bear-gift-wrap svg { width: 42px !important; height: 54px !important; }
     .inv-location-info, .inv-gift-info {
       display: flex;
       flex-direction: column;
@@ -277,11 +280,11 @@
     }
     .inv-addr, .inv-gift-text {
       font-family: 'Lato', sans-serif;
-      font-size: .62rem;
-      letter-spacing: .07em;
+      font-size: .58rem;
+      letter-spacing: .05em;
       text-transform: uppercase;
       color: #4A2E0A;
-      line-height: 1.75;
+      line-height: 1.65;
     }
     .btn-mapa, .btn-regalo {
       display: inline-flex;
@@ -311,7 +314,8 @@
       background: #C9B08A;
       align-self: stretch;
       flex-shrink: 0;
-      margin-top: 1.6rem;
+      margin-top: 1.4rem;
+      opacity: .6;
     }
 
     .btn-back {
@@ -377,6 +381,19 @@
     }
     @keyframes swayLeft  { 0%,100% { transform: rotate(-1.2deg); } 50% { transform: rotate(1.2deg);  } }
     @keyframes swayRight { 0%,100% { transform: rotate(1deg);    } 50% { transform: rotate(-1deg);   } }
+
+    /* ── BOTÓN AMAZON ── */
+    .btn-amazon {
+      display: inline-flex; align-items: center; gap: .35rem;
+      background: #FF9900; color: #1A0D00; border: none;
+      border-radius: 50px; padding: .35rem .85rem;
+      font-family: 'Lato', sans-serif; font-size: .58rem;
+      font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+      cursor: pointer; text-decoration: none; align-self: flex-start;
+      box-shadow: 0 3px 10px rgba(255,153,0,.35);
+      transition: background .2s, transform .15s;
+    }
+    .btn-amazon:hover { background: #e68900; transform: translateY(-1px); }
   </style>
 </head>
 <body>
@@ -627,10 +644,64 @@
           </div>
         </div>
 
+        <!-- divisor vertical -->
+        <div class="col-divider"></div>
+
+        <!-- COL Amazon internacional -->
+        <div class="inv-col">
+          <span class="inv-col-title">Amazon</span>
+          <div class="inv-card-row">
+            <!-- osito con mapamundi -->
+            <div class="bear-world-wrap" style="flex-shrink:0;display:flex;align-items:center;">
+              <svg width="48" height="62" viewBox="0 0 52 66" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="11" cy="13" r="7"   fill="#C9984A"/>
+                <circle cx="11" cy="13" r="3.8" fill="#E8C880"/>
+                <circle cx="41" cy="13" r="7"   fill="#C9984A"/>
+                <circle cx="41" cy="13" r="3.8" fill="#E8C880"/>
+                <circle cx="26" cy="23" r="16" fill="#C9984A"/>
+                <ellipse cx="14" cy="22" rx="6.5" ry="8" fill="#E8C880" opacity=".35"/>
+                <ellipse cx="38" cy="22" rx="6.5" ry="8" fill="#E8C880" opacity=".35"/>
+                <ellipse cx="26" cy="29" rx="8"   ry="5.5" fill="#E8C880"/>
+                <ellipse cx="26" cy="25.5" rx="3.2" ry="2.2" fill="#7B4A2E"/>
+                <circle cx="19.5" cy="20" r="3.2" fill="#3D2000"/>
+                <circle cx="32.5" cy="20" r="3.2" fill="#3D2000"/>
+                <circle cx="20.8" cy="18.8" r="1.2" fill="white"/>
+                <circle cx="33.8" cy="18.8" r="1.2" fill="white"/>
+                <circle cx="20"   cy="21"   r=".5"  fill="white" opacity=".6"/>
+                <circle cx="33"   cy="21"   r=".5"  fill="white" opacity=".6"/>
+                <path d="M20 31 Q26 36.5 32 31" fill="none" stroke="#7B4A2E" stroke-width="1.4" stroke-linecap="round"/>
+                <ellipse cx="26" cy="51" rx="14" ry="12" fill="#C9984A"/>
+                <polygon points="18,44 24,48 18,52" fill="#6BAED6"/>
+                <polygon points="34,44 28,48 34,52" fill="#6BAED6"/>
+                <circle cx="26" cy="48" r="2.8" fill="#4292C6"/>
+                <ellipse cx="14" cy="57" rx="6" ry="5" fill="#C9984A"/>
+                <ellipse cx="38" cy="57" rx="6" ry="5" fill="#C9984A"/>
+                <!-- brazo alzado sosteniendo globo -->
+                <line x1="38" y1="43" x2="47" y2="30" stroke="#C9984A" stroke-width="4.5" stroke-linecap="round"/>
+                <!-- globo terráqueo -->
+                <circle cx="47" cy="24" r="8"   fill="#4A90D9"/>
+                <ellipse cx="44" cy="21" rx="3"   ry="2"   fill="#4CAF50" opacity=".9"/>
+                <ellipse cx="50" cy="22" rx="2"   ry="2.5" fill="#4CAF50" opacity=".9"/>
+                <ellipse cx="46" cy="27" rx="2.5" ry="1.5" fill="#4CAF50" opacity=".9"/>
+                <line x1="39" y1="24" x2="55" y2="24" stroke="white" stroke-width=".4" opacity=".5"/>
+                <path d="M47 16 Q51 24 47 32" fill="none" stroke="white" stroke-width=".4" opacity=".5"/>
+              </svg>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:.3rem;flex:1;">
+              <p class="inv-gift-text">
+                Envía un regalito desde amazon
+              </p>
+              <a class="btn-amazon"
+                 href="https://www.amazon.com/baby-reg/juan-bolivar-septiembre-2026-bello/OGZ4H44CJGI7?ref_=cm_sw_r_cp_ud_dp_94KWMBDNPH3T3TBJCAZQ"
+                 target="_blank" rel="noopener">Ver en Amazon</a>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <button class="btn-back" onclick="showCover()">← Volver</button>
+        <button class="btn-back" onclick="showCover()">← Volver</button>
   </div>
 
 </div>
