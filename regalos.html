@@ -707,21 +707,22 @@ document.getElementById('filters').addEventListener('click', e => {
 // ── Carga inicial ─────────────────────────────────────────────
 // ── Volver a la lista desde la pantalla de éxito ────────────
 function volverALista() {
-  // Resetear estado de selección
+  // Limpiar selección
   selected.clear();
   updateCart();
 
-  // Ocultar success, mostrar grid y filtros
+  // Mostrar la lista INMEDIATAMENTE con los datos locales ya actualizados
+  // (confirmarLocalmente ya descontó las cantidades al momento de confirmar)
   document.getElementById('successScreen').classList.remove('show');
   document.getElementById('grid').style.display     = '';
   document.getElementById('filters').style.display  = '';
   document.querySelector('.page-sub').style.display = '';
+  renderGrid(); // render inmediato con reservas locales correctas
 
-  // Actualizar reservas desde la API para reflejar cantidades reales
-  fetchReservas();
-
-  // Scroll al top
   window.scrollTo({top: 0, behavior: 'smooth'});
+
+  // En paralelo, fusionar con datos del Sheet (sin bloquear ni sobreescribir)
+  fetchReservas();
 }
 
 // ── Cargar reservas desde la API ─────────────────────────────
@@ -735,7 +736,17 @@ async function fetchReservas() {
     if (!text || !text.startsWith('{')) return;
     const data = JSON.parse(text);
     if (!data || !data.ok || !data.reservas) return;
-    reservas = data.reservas;
+
+    // Fusionar: combinar las del Sheet con las locales (que pueden ser más recientes)
+    const remoto = data.reservas;
+    const merged = { ...remoto };
+    Object.keys(reservas).forEach(pid => {
+      if (!merged[pid]) merged[pid] = [];
+      reservas[pid].forEach(nombre => {
+        if (!merged[pid].includes(nombre)) merged[pid].push(nombre);
+      });
+    });
+    reservas = merged;
     renderGrid();
   } catch(err) {
     console.log('Reservas:', err.message);
