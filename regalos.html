@@ -644,6 +644,14 @@ function closeModal() {
 }
 
 // ── Enviar ────────────────────────────────────────────────────
+// Actualizar reservas locales sin esperar a la API
+function confirmarLocalmente(nombre, ids) {
+  ids.forEach(pid => {
+    if (!reservas[pid]) reservas[pid] = [];
+    if (!reservas[pid].includes(nombre)) reservas[pid].push(nombre);
+  });
+}
+
 async function sendReserva() {
   const nombre = document.getElementById('nameInput').value.trim();
   if (!nombre) { showToast('Ingresa tu nombre completo','error'); return; }
@@ -667,7 +675,8 @@ async function sendReserva() {
     });
 
     // Con no-cors no leemos la respuesta, pero el Apps Script lo recibe y guarda
-    // Mostramos éxito directamente
+    // Actualización optimista: reflejar localmente las reservas de esta persona
+    confirmarLocalmente(nombre, [...selected]);
     closeModal();
     document.getElementById('grid').style.display     = 'none';
     document.getElementById('filters').style.display   = 'none';
@@ -692,39 +701,35 @@ document.getElementById('filters').addEventListener('click', e => {
 });
 
 // ── Carga inicial ─────────────────────────────────────────────
+// ── Cargar reservas desde la API ─────────────────────────────
+async function fetchReservas() {
+  if (!API_URL || API_URL.includes('TU_APPS')) return;
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 6000);
+    const resp = await fetch(API_URL + '?t=' + Date.now(), { signal: ctrl.signal });
+    const text = await resp.text();
+    if (!text || !text.startsWith('{')) return;
+    const data = JSON.parse(text);
+    if (!data || !data.ok || !data.reservas) return;
+    reservas = data.reservas;
+    renderGrid();
+  } catch(err) {
+    console.log('Reservas:', err.message);
+  }
+}
+
 async function loadData() {
-  // 1. Mostrar los 55 productos locales INMEDIATAMENTE — nunca se borran
-  productos = JSON.parse(JSON.stringify(PRODUCTOS_DEFAULT)); // copia profunda
+  // Mostrar productos locales inmediatamente
+  productos = JSON.parse(JSON.stringify(PRODUCTOS_DEFAULT));
   reservas  = {};
   renderGrid();
 
-  // 2. En paralelo, cargar reservas reales desde la API (solo para mostrar quién reservó)
-  if (!API_URL || API_URL.includes('TU_APPS')) return;
+  // Primera carga de reservas reales
+  await fetchReservas();
 
-  try {
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 6000); // timeout 6s
-
-    const resp = await fetch(API_URL + '?t=' + Date.now(), {
-      signal: controller.signal
-    });
-
-    const text = await resp.text();
-    if (!text || !text.startsWith('{')) return; // no es JSON válido
-
-    const data = JSON.parse(text);
-    if (!data || !data.ok) return; // API devolvió error — mantener datos locales
-
-    // Solo actualizar las RESERVAS, nunca tocar la lista de productos
-    if (data.reservas) {
-      reservas = data.reservas;
-      renderGrid(); // re-render solo para mostrar quién ya reservó
-    }
-
-  } catch(err) {
-    // Silencioso — los productos locales siguen visibles
-    console.log('Reservas no cargadas:', err.message);
-  }
+  // Polling cada 30 segundos para que todos los usuarios vean cambios
+  setInterval(fetchReservas, 30000);
 }
 
 loadData();
