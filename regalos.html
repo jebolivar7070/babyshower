@@ -69,7 +69,6 @@
       display:flex;overflow-x:auto;scroll-snap-type:x mandatory;
       scrollbar-width:none;-webkit-overflow-scrolling:touch;
       cursor:grab;user-select:none;-webkit-user-select:none;
-      touch-action:pan-x;
     }
     .img-gallery::-webkit-scrollbar{display:none}
     .img-gallery.dragging{cursor:grabbing}
@@ -495,25 +494,37 @@ function renderGrid() {
 
 // ── Scroll galería con dots ───────────────────────────────────
 function scrollGallery(e, gallery) {
-  // Click simple en galería — avanzar/retroceder
-  e.stopPropagation();
+  // Si hubo drag/swipe real → cancelar, no activar selección ni click
+  if (gallery._wasDragging) {
+    gallery._wasDragging = false;
+    e.stopPropagation(); // evitar toggleSelect
+    return;
+  }
+  // Si la galería tiene una sola imagen → dejar pasar el click al card (toggleSelect)
   if (gallery.children.length <= 1) return;
-  if (gallery._wasDragging) { gallery._wasDragging = false; return; }
+  // Si tiene varias imágenes → avanzar/retroceder con click, pero TAMBIÉN seleccionar
+  // (no hacemos stopPropagation → el click sube al card y activa toggleSelect)
   const rect   = gallery.getBoundingClientRect();
   const clickX = e.clientX - rect.left;
-  if (clickX > rect.width / 2) {
+  if (clickX > rect.width * 0.75) {
+    // Clic en cuarto derecho → avanzar imagen
+    e.stopPropagation();
     gallery.scrollBy({left: rect.width, behavior:'smooth'});
-  } else {
+  } else if (clickX < rect.width * 0.25) {
+    // Clic en cuarto izquierdo → retroceder imagen
+    e.stopPropagation();
     gallery.scrollBy({left:-rect.width, behavior:'smooth'});
   }
+  // Clic en zona central → no stopPropagation → toggleSelect se activa
 }
 
 // ── Inicializar drag (mouse) y swipe (touch) en galerías ──
 function initDragSwipe(gallery) {
   if (gallery.children.length <= 1) return;
+
+  // ── MOUSE drag ──────────────────────────────────────────
   let startX = 0, startScroll = 0, isDragging = false;
 
-  // MOUSE drag
   gallery.addEventListener('mousedown', e => {
     isDragging  = true;
     startX      = e.pageX;
@@ -523,36 +534,59 @@ function initDragSwipe(gallery) {
   });
   document.addEventListener('mousemove', e => {
     if (!isDragging) return;
-    const dx = e.pageX - startX;
-    gallery.scrollLeft = startScroll - dx;
+    gallery.scrollLeft = startScroll - (e.pageX - startX);
   });
   document.addEventListener('mouseup', e => {
     if (!isDragging) return;
     isDragging = false;
     gallery.classList.remove('dragging');
     const dx = e.pageX - startX;
-    if (Math.abs(dx) > 30) {
+    if (Math.abs(dx) > 20) {
       gallery._wasDragging = true;
-      // Snap al slide más cercano
       const w = gallery.offsetWidth;
-      const idx = Math.round(gallery.scrollLeft / w);
-      gallery.scrollTo({left: idx * w, behavior:'smooth'});
+      gallery.scrollTo({left: Math.round(gallery.scrollLeft / w) * w, behavior:'smooth'});
     }
   });
 
-  // TOUCH swipe — el navegador ya maneja pan-x nativo con scroll-snap
-  // Solo necesitamos detectar si fue swipe para no disparar toggleSelect
-  let touchStartX = 0;
+  // ── TOUCH: detectar si es swipe horizontal o scroll vertical ──
+  let tStartX = 0, tStartY = 0, tStartScroll = 0;
+  let tDirection = null; // 'h' | 'v' | null
+
   gallery.addEventListener('touchstart', e => {
-    touchStartX = e.touches[0].clientX;
-  }, {passive:true});
-  gallery.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    if (Math.abs(dx) > 20) {
-      gallery._wasDragging = true;
-      e.stopPropagation();
+    tStartX      = e.touches[0].clientX;
+    tStartY      = e.touches[0].clientY;
+    tStartScroll = gallery.scrollLeft;
+    tDirection   = null;
+    gallery._wasDragging = false;
+  }, {passive: true});
+
+  gallery.addEventListener('touchmove', e => {
+    const dx = e.touches[0].clientX - tStartX;
+    const dy = e.touches[0].clientY - tStartY;
+
+    // Determinar dirección solo la primera vez
+    if (!tDirection) {
+      tDirection = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
     }
-  }, {passive:true});
+
+    if (tDirection === 'h') {
+      // Swipe horizontal → mover galería, bloquear scroll de página
+      e.preventDefault();
+      gallery.scrollLeft = tStartScroll - dx;
+    }
+    // Si es vertical → no hacer nada, el scroll de página funciona normal
+  }, {passive: false}); // passive:false para poder llamar preventDefault
+
+  gallery.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tStartX;
+    if (tDirection === 'h' && Math.abs(dx) > 20) {
+      gallery._wasDragging = true;
+      // Snap al slide más cercano
+      const w = gallery.offsetWidth;
+      gallery.scrollTo({left: Math.round(gallery.scrollLeft / w) * w, behavior:'smooth'});
+    }
+    tDirection = null;
+  }, {passive: true});
 }
 
 function initDots() {
