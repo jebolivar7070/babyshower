@@ -220,16 +220,19 @@
     .inv-name    { font-family: 'Playfair Display', serif; font-size: clamp(2rem,7vw,3rem); font-weight: 700; color: #4A2E0A; line-height: 1.15; margin: .3rem 0; }
 
     /* Fecha */
-    .inv-fecha-wrap  { width: 100%; display: flex; flex-direction: column; align-items: center; margin: .5rem 0; }
-    .inv-fecha-tabla { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .inv-sep-row td  { padding: 0; vertical-align: middle; }
-    .inv-sep-line    { height: 1px; background: #C9B08A; }
-    .inv-sep-year    { font-family: 'Lato', sans-serif; font-size: .72rem; letter-spacing: .28em; color: #A07840; text-transform: uppercase; text-align: center; white-space: nowrap; padding: 0 .5rem; }
-    .inv-data-row td { padding: .15rem 0 0; vertical-align: baseline; text-align: center; }
-    .cel-dow  { font-family: 'Lato', sans-serif; font-size: .78rem; letter-spacing: .15em; color: #A07840; text-transform: uppercase; text-align: left !important; }
-    .cel-day  { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; color: #7B5B1A; line-height: 1; }
-    .cel-mes  { font-family: 'Lato', sans-serif; font-size: .78rem; letter-spacing: .15em; color: #A07840; text-transform: uppercase; }
-    .cel-hora { font-family: 'Lato', sans-serif; font-size: .78rem; letter-spacing: .15em; color: #A07840; text-transform: uppercase; text-align: right; }
+    .inv-fecha-wrap      { width: 100%; display: flex; flex-direction: column; align-items: center; margin: .5rem 0; }
+    .inv-fecha-nueva     { width: 100%; display: flex; flex-direction: column; align-items: center; gap: .1rem; }
+    /* ——— 2026 ——— */
+    .inv-sep-row-flex    { width: 100%; display: flex; align-items: center; gap: .5rem; }
+    .inv-sep-line        { flex: 1; height: 1px; background: #C9B08A; }
+    .inv-sep-year        { font-family: 'Lato', sans-serif; font-size: .72rem; letter-spacing: .28em; color: #A07840; text-transform: uppercase; white-space: nowrap; }
+    /* 28 grande centrado */
+    .cel-day             { font-family: 'Playfair Display', serif; font-size: 3rem; font-weight: 700; color: #7B5B1A; line-height: 1; text-align: center; }
+    /* Domingo · Junio · 3:00 pm en fila centrada */
+    .inv-data-row-flex   { display: flex; align-items: baseline; justify-content: center; gap: 1.2rem; width: 100%; padding-top: .1rem; }
+    .cel-dow  { font-family: 'Lato', sans-serif; font-size: .75rem; letter-spacing: .15em; color: #A07840; text-transform: uppercase; }
+    .cel-mes  { font-family: 'Lato', sans-serif; font-size: .75rem; letter-spacing: .15em; color: #A07840; text-transform: uppercase; }
+    .cel-hora { font-family: 'Lato', sans-serif; font-size: .75rem; letter-spacing: .15em; color: #A07840; text-transform: uppercase; }
 
     /* Cuadro vestimenta */
     .inv-box   { border: 1.5px solid #C9B08A; border-radius: 6px; padding: .75rem 1.2rem; margin: .4rem auto; width: 100%; }
@@ -572,21 +575,22 @@
     <!-- Bloque 3: fecha -->
     <div class="inv-block" id="b2">
       <div class="inv-fecha-wrap">
-        <table class="inv-fecha-tabla">
-          <tr class="inv-sep-row">
-            <td><div class="inv-sep-line"></div></td>
-            <td class="inv-sep-year">2026</td>
-            <td><div class="inv-sep-line"></div></td>
-          </tr>
-          <tr class="inv-data-row">
-            <td class="cel-dow">Domingo</td>
-            <td class="cel-day">28</td>
-            <td style="display:flex;justify-content:space-between;align-items:baseline;padding-top:.15rem;">
-              <span class="cel-mes">Junio</span>
-              <span class="cel-hora">3:00 pm</span>
-            </td>
-          </tr>
-        </table>
+        <div class="inv-fecha-nueva">
+          <!-- Línea ——— 2026 ——— -->
+          <div class="inv-sep-row-flex">
+            <div class="inv-sep-line"></div>
+            <span class="inv-sep-year">2026</span>
+            <div class="inv-sep-line"></div>
+          </div>
+          <!-- El 28 centrado -->
+          <div class="cel-day">28</div>
+          <!-- Domingo · Junio · 3:00 pm centrados bajo el 28 -->
+          <div class="inv-data-row-flex">
+            <span class="cel-dow">Domingo</span>
+            <span class="cel-mes">Junio</span>
+            <span class="cel-hora">3:00 pm</span>
+          </div>
+        </div>
       </div>
     </div>
 
