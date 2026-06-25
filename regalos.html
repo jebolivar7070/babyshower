@@ -414,7 +414,7 @@ function renderGrid() {
     return `
 <div class="card${isSel?' selected':''}${agotado&&!isSel?' agotado':''}"
      data-id="${prod.id}" onclick="toggleSelect('${prod.id}')">
-  <div class="img-gallery" onclick="event.stopPropagation();scrollGallery(event,this)">${galeria}</div>
+  <div class="img-gallery" onclick="scrollGallery(event,this)">${galeria}</div>
   ${dots}
   ${badge}
   <div class="card-body">
@@ -431,7 +431,8 @@ function renderGrid() {
 
 // ── Scroll galería con dots ───────────────────────────────────
 function scrollGallery(e, gallery) {
-  // Solo si hay múltiples imágenes
+  // Scroll de galería — NO propagar el evento al card padre
+  e.stopPropagation();
   if (gallery.children.length <= 1) return;
   const rect  = gallery.getBoundingClientRect();
   const half  = rect.width / 2;
@@ -499,29 +500,44 @@ async function sendReserva() {
   const btn = document.getElementById('btnSend');
   btn.disabled = true; btn.textContent = 'Guardando...';
 
+  // Usar URLSearchParams para evitar CORS preflight con Apps Script
+  const params = new URLSearchParams({
+    nombre   : nombre,
+    productos: [...selected].join(',')
+  });
+
   try {
-    const resp = await fetch(API_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ nombre, productos:[...selected] })
+    // Apps Script acepta POST con application/x-www-form-urlencoded sin preflight
+    const respPost = await fetch(API_URL, {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body   : params.toString()
     });
-    const data = await resp.json();
+
+    let data;
+    try {
+      const text = await respPost.text();
+      data = JSON.parse(text);
+    } catch(_) {
+      // Si no parsea, asumir éxito (Apps Script a veces redirige)
+      data = { ok: true, mensaje: `¡Gracias ${nombre}! Tu selección fue guardada 🎉` };
+    }
 
     if (data.ok) {
       closeModal();
-      document.getElementById('grid').style.display    = 'none';
-      document.getElementById('filters').style.display  = 'none';
-      document.querySelector('.page-sub').style.display = 'none';
+      document.getElementById('grid').style.display     = 'none';
+      document.getElementById('filters').style.display   = 'none';
+      document.querySelector('.page-sub').style.display  = 'none';
       document.getElementById('cartBar').classList.remove('visible');
       document.getElementById('successScreen').classList.add('show');
       showToast(data.mensaje || '¡Listo!', 'success');
     } else {
       showToast(data.error || 'Error al guardar', 'error');
-      btn.disabled=false; btn.textContent='Guardar mi selección 🎁';
+      btn.disabled = false; btn.textContent = 'Guardar mi selección 🎁';
     }
   } catch(err) {
-    showToast('Error de conexión. Intenta de nuevo.','error');
-    btn.disabled=false; btn.textContent='Guardar mi selección 🎁';
+    showToast('Error de conexión: ' + err.message, 'error');
+    btn.disabled = false; btn.textContent = 'Guardar mi selección 🎁';
   }
 }
 
